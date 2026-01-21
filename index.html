@@ -1,32 +1,228 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Yandex Android Browser Sandbox Test (POC)</title>
-  <style>
-    iframe { width: 90vw; height: 200px; border: 2px solid #333; margin-bottom:10px;}
-    button { font-size:18px; margin-top:18px;}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Информация о Chromium браузере</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .info-section {
+            margin-bottom: 25px;
+            padding: 15px;
+            border-left: 4px solid #4285f4;
+            background-color: #f8f9fa;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+            background-color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #d32f2f;
+        }
+        
+        .refresh-btn {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #3367d6;
+        }
+        
+        .browser-icon {
+            font-size: 48px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-  <h2>Проверка sandbox: allow-popups <i>(Yandex Android Browser POC)</i></h2>
-  <p>1. Обычный iframe (без sandbox):</p>
-  <iframe srcdoc="<script>document.body.innerText='Script worked!';</script>"></iframe>
+    <div class="container">
+        <div class="browser-icon">🌐</div>
+        <h1>Информация о Chromium браузере</h1>
+        
+        <div class="info-section">
+            <div class="info-label">Версия браузера:</div>
+            <div id="browser-version" class="info-value loading">Загрузка...</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">User Agent:</div>
+            <div id="user-agent" class="info-value loading">Загрузка...</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">Платформа:</div>
+            <div id="platform" class="info-value loading">Загрузка...</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">Поддержка WebGL:</div>
+            <div id="webgl-support" class="info-value loading">Загрузка...</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">Разрешение экрана:</div>
+            <div id="screen-resolution" class="info-value loading">Загрузка...</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">Доступная память:</div>
+            <div id="memory" class="info-value loading">Загрузка...</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">Язык браузера:</div>
+            <div id="language" class="info-value loading">Загрузка...</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-label">Куки включены:</div>
+            <div id="cookies" class="info-value loading">Загрузка...</div>
+        </div>
+        
+        <div id="error-message" class="error" style="display: none;"></div>
+        
+        <button class="refresh-btn" onclick="loadBrowserInfo()">Обновить информацию</button>
+    </div>
 
-  <p>2. С sandbox="allow-popups": <b>(В норме скрипты не выполняются)</b></p>
-  <iframe sandbox="allow-popups" srcdoc="<script>document.body.innerText='Script executed! Should NOT happen.';</script>"></iframe>
-
-  <p>3. С sandbox="allow-popups allow-scripts": <b>(разрешено выполнение скриптов)</b></p>
-  <iframe sandbox="allow-popups allow-scripts" srcdoc="<script>document.body.innerText='Script worked with allow-scripts!';</script>"></iframe>
-
-  <hr>
-  <h3>POC button</h3>
-  <button onclick="window.open('intent://ya.ru','_blank')">
-    Тест: Pop-up с intent-схемой
-  </button>
-  <p>
-    <small>Ожидание: Во втором iframe код JS НЕ должен выполниться.<br>
-    В Яндекс Браузере для Android: JS может выполниться, что не соответствует ожиданию безопасности.</small>
-  </p>
+    <script>
+        async function loadBrowserInfo() {
+            try {
+                // Показываем состояние загрузки
+                document.querySelectorAll('.info-value').forEach(el => {
+                    el.innerHTML = '<span class="loading">Загрузка...</span>';
+                });
+                document.getElementById('error-message').style.display = 'none';
+                
+                // Получаем базовую информацию о браузере
+                const browserInfo = await getBrowserInfo();
+                
+                // Обновляем информацию на странице
+                document.getElementById('browser-version').textContent = browserInfo.version || 'Не доступно';
+                document.getElementById('user-agent').textContent = browserInfo.userAgent || navigator.userAgent;
+                document.getElementById('platform').textContent = browserInfo.platform || navigator.platform;
+                document.getElementById('webgl-support').textContent = browserInfo.webgl ? 'Поддерживается' : 'Не поддерживается';
+                document.getElementById('screen-resolution').textContent = `${screen.width} × ${screen.height} (${screen.colorDepth} бит)`;
+                document.getElementById('language').textContent = browserInfo.language || navigator.language;
+                document.getElementById('cookies').textContent = navigator.cookieEnabled ? 'Да' : 'Нет';
+                
+                // Память (только в некоторых браузерах)
+                if (navigator.deviceMemory) {
+                    document.getElementById('memory').textContent = `${navigator.deviceMemory} GB`;
+                } else {
+                    document.getElementById('memory').textContent = 'Не доступно';
+                }
+                
+            } catch (error) {
+                document.getElementById('error-message').textContent = 
+                    `Ошибка при получении информации: ${error.message}`;
+                document.getElementById('error-message').style.display = 'block';
+            }
+        }
+        
+        async function getBrowserInfo() {
+            // Попытка получить информацию через Puppeteer-like API
+            // В реальном сценарии это бы делалось на сервере
+            try {
+                // Эмуляция получения информации о версии Chrome
+                const userAgent = navigator.userAgent;
+                const chromeVersion = userAgent.match(/Chrome\/([0-9.]+)/);
+                
+                return {
+                    version: chromeVersion ? chromeVersion[1] : 'Не Chromium-based',
+                    userAgent: userAgent,
+                    platform: navigator.platform,
+                    webgl: !!window.WebGLRenderingContext,
+                    language: navigator.language,
+                    // Дополнительная информация, которая может быть доступна
+                    vendor: navigator.vendor,
+                    product: navigator.product,
+                    hardwareConcurrency: navigator.hardwareConcurrency || 'Не доступно'
+                };
+                
+            } catch (error) {
+                throw new Error('Не удалось получить информацию о браузере');
+            }
+        }
+        
+        // Дополнительная информация, специфичная для Chrome
+        function getChromeSpecificInfo() {
+            const info = {};
+            
+            // Проверяем наличие Chrome-специфичных API
+            info.chromeRuntime = !!window.chrome && !!chrome.runtime;
+            info.chromeStorage = !!window.chrome && !!chrome.storage;
+            info.chromeTabs = !!window.chrome && !!chrome.tabs;
+            
+            return info;
+        }
+        
+        // Загружаем информацию при старте
+        document.addEventListener('DOMContentLoaded', loadBrowserInfo);
+        
+        // Дополнительный функционал для демонстрации
+        console.log('Информация о браузере:');
+        console.log('- User Agent:', navigator.userAgent);
+        console.log('- Платформа:', navigator.platform);
+        console.log('- Языки:', navigator.languages);
+        console.log('- Онлайн статус:', navigator.onLine);
+        console.log('- Куки:', navigator.cookieEnabled);
+        
+        if (navigator.deviceMemory) {
+            console.log('- Память:', navigator.deviceMemory, 'GB');
+        }
+        
+        if (navigator.hardwareConcurrency) {
+            console.log('- Ядра CPU:', navigator.hardwareConcurrency);
+        }
+    </script>
 </body>
 </html>
